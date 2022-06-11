@@ -32,6 +32,53 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+/** World Save Proposal
+ *
+ * World Save Structure
+ * <Save Name>
+	├──	world.json
+	├──	players
+	│	└──	<player>.dat
+	└──	levels
+		└──	<Level ID>
+			├──	region
+			│	└──	<x>;<y>.dat (each of them contains 4-9 chunks)
+			└──	level.json
+ *
+ * <Level ID> (<relative depth>; <current save level index>)
+ * main: overworld (0; 3)
+ * sky: sky level (1; 4)
+ * iron: iron level (-1; 2)
+ * gold: gold level (-2; 1)
+ * gem: gem level (-3; 0)
+ * dungeon: dungeon level (-4; 5)
+ *
+ * world.json
+ * <JSON root>
+ * 	├─	name (string): The World name.
+ * 	├─	version (string): The World Version. (Based on game version)
+ * 	├─	seed (long): The overall game seed. (Mainly used in level seed generation)
+ * 	├─	dayTime (int): The tick count of the current day.
+ * 	├─	time (int): The game time.
+ * 	├─	difficulty (int): The current game difficulty.
+ * 	├─	wizardBeaten (boolean): Whether the wizard is beaten.
+ * 	├─	scoreTime (int): The score time setting. (Only in score mode)
+ * 	└─	scoreTimeTick (int): The current score time. (Only in score mode)
+ *
+ * players/<player>.dat
+ * 	└─	... (Decide when multiplayer is being decided)
+ *
+ * levels/<Level ID>/level.json
+ * <JSON root>
+ * 	├─	seed (long): The level seed.
+ * 	└─	depth (int): The level depth.
+ *
+ * levels/<Level ID>/region/<x>;<y>.dat
+ * 	├─	entities (list<compound>): The list of entities being in this region.
+ * 	│	├─	name (string): The name of the entity.
+ * 	│	└─	type (string): What is the entity.
+ * 	└─	chunks (list<compound>):
+ */
 public class Save {
 
 	public String location = Game.gameDir;
@@ -242,7 +289,7 @@ public class Save {
 		for (Quest q : QuestsDisplay.getUnlockedQuests()) {
 			unlockedQuests.put(q.id);
 		}
-		
+
 		for (Quest q : QuestsDisplay.getCompleteQuest()) {
 			doneQuests.put(q.id);
 		}
