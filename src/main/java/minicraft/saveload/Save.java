@@ -17,13 +17,14 @@ import minicraft.entity.particle.TextParticle;
 import minicraft.item.Inventory;
 import minicraft.item.Item;
 import minicraft.item.PotionType;
-import minicraft.saveload.bfs.BFSOutputStream;
 import minicraft.screen.*;
 import minicraft.util.Quest;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.tinylog.Logger;
+
+import com.fasterxml.jackson.dataformat.cbor.CBORGenerator;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -204,10 +205,9 @@ public class Save {
 			bufferedWriter.write(json);
 		}
 	}
-	/** Please confirm all values of JSONObject are {@link minicraft.saveload.bfs.BFSObject BFSObject}. */
-	public static void writeToFileWithBFS(String filename, JSONObject json) throws IOException {
-		try (BFSOutputStream bufferedWriter = BFSOutputStream.Deflater(new FileOutputStream(filename))) {
-			bufferedWriter.writeFully(json);
+	public static void writeJSONToFileBinary(String filename, JSONObject json) throws IOException {
+		try (CBORGenerator cbor = BinaryStreaming.Deflater(new FileOutputStream(filename))) {
+			cbor.writeTree(BinaryStreaming.JSONObjectToObjectNode(json));
 		}
 	}
 

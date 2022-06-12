@@ -23,6 +23,8 @@ repositories {
 dependencies {
     implementation 'org.jetbrains:annotations:23.0.0'
     implementation 'org.json:json:20211205'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.13.3'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.3'
     implementation 'com.konghq:unirest-java:3.13.7'
     implementation 'org.tinylog:tinylog-api:2.4.1'
     implementation 'org.tinylog:tinylog-impl:2.4.1'
