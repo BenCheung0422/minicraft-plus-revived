@@ -3,12 +3,12 @@ package minicraft.saveload.bfs;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BFSList {
+public class BFSArray {
 	private ArrayList<BFSObject> list = new ArrayList<>();
 
 	private final TagType contentType;
 
-	public BFSList(TagType type) {
+	public BFSArray(TagType type) {
 		contentType = type;
 	}
 

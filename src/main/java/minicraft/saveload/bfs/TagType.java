@@ -3,6 +3,8 @@ package minicraft.saveload.bfs;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import org.json.JSONObject;
+
 public enum TagType {
     END(0x00, null),
     BYTE(0x01, Byte.class),
@@ -13,8 +15,8 @@ public enum TagType {
     DOUBLE(0x06, Double.class),
     BYTE_ARRAY(0x07, byte[].class),
     STRING(0x08, String.class),
-    LIST(0x09, BFSList.class),
-    COMPOUND(0x0A, BFSCompound.class),
+    ARRAY(0x09, BFSArray.class),
+    OBJECT(0x0A, JSONObject.class),
     INT_ARRAY(0x0B, int[].class),
     LONG_ARRAY(0x0C, long[].class);
 
@@ -65,5 +67,50 @@ public enum TagType {
             return null;
         }
         return values[id];
+    }
+
+	public static TagType fromObject(Object obj) {
+        if (obj instanceof Byte) {
+            return BYTE;
+
+        } else if (obj instanceof Short) {
+            return SHORT;
+
+        } else if (obj instanceof Integer) {
+            return INT;
+
+        } else if (obj instanceof Long) {
+            return LONG;
+
+        } else if (obj instanceof Float) {
+            return FLOAT;
+
+        } else if (obj instanceof Double) {
+            return DOUBLE;
+
+        } else if (obj instanceof byte[]) {
+            return BYTE_ARRAY;
+
+        } else if (obj instanceof String) {
+            return STRING;
+
+        } else if (obj instanceof BFSArray) {
+            return ARRAY;
+
+        } else if (obj instanceof JSONObject) {
+            return OBJECT;
+
+        } else if (obj instanceof int[]) {
+            return INT_ARRAY;
+
+        } else if (obj instanceof long[]) {
+            return LONG_ARRAY;
+
+        } else if (obj == null) {
+            return END;
+
+        } else {
+            throw new IllegalArgumentException(obj.getClass().getSimpleName() + " has no NBT type");
+        }
     }
 }

@@ -17,6 +17,7 @@ import minicraft.entity.particle.TextParticle;
 import minicraft.item.Inventory;
 import minicraft.item.Item;
 import minicraft.item.PotionType;
+import minicraft.saveload.bfs.BFSOutputStream;
 import minicraft.screen.*;
 import minicraft.util.Quest;
 
@@ -26,6 +27,7 @@ import org.tinylog.Logger;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,6 +41,9 @@ import java.util.Map.Entry;
 	├──	world.json
 	├──	players
 	│	└──	<player>.dat
+	├──	data
+	│	├──	quests.json
+	│	└──	<other data>
 	└──	levels
 		└──	<Level ID>
 			├──	region
@@ -197,6 +202,12 @@ public class Save {
 	public static void writeJSONToFile(String filename, String json) throws IOException {
 		try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(filename))) {
 			bufferedWriter.write(json);
+		}
+	}
+	/** Please confirm all values of JSONObject are {@link minicraft.saveload.bfs.BFSObject BFSObject}. */
+	public static void writeToFileWithBFS(String filename, JSONObject json) throws IOException {
+		try (BFSOutputStream bufferedWriter = BFSOutputStream.Deflater(new FileOutputStream(filename))) {
+			bufferedWriter.writeFully(json);
 		}
 	}
 

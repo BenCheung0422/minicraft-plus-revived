@@ -6,11 +6,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.DeflaterOutputStream;
-import java.util.Map.Entry;
+
+import org.json.JSONObject;
+
 import java.util.zip.Deflater;
 
 public class BFSOutputStream extends DataOutputStream {
-	public BFSOutputStream(OutputStream out) {
+	BFSOutputStream(OutputStream out) {
 		super(out);
 	}
 
@@ -18,18 +20,13 @@ public class BFSOutputStream extends DataOutputStream {
 		return new BFSOutputStream(new DeflaterOutputStream(out, new Deflater(9)));
 	}
 
-    /**
-     * Serialize an NBT compound and write it to the output stream
-     *
-     * @throws IOException If the compound could not be written
-     */
-    public void writeFully(BFSCompound compound) throws IOException {
-        if (compound == null) {
+    public void writeFully(JSONObject object) throws IOException {
+        if (object == null) {
             writeTagType(TagType.END);
         } else {
-            writeTagType(TagType.COMPOUND);
+            writeTagType(TagType.OBJECT);
             writeString("");
-            writeCompound(compound);
+            writeObject(object);
 
             if (out instanceof DeflaterOutputStream) {
                 ((DeflaterOutputStream) out).finish();
@@ -85,12 +82,12 @@ public class BFSOutputStream extends DataOutputStream {
                 writeString((String) value.value);
                 break;
 
-            case LIST:
-                writeList((BFSList) value.value);
+            case ARRAY:
+                writeArray((BFSArray) value.value);
                 break;
 
-            case COMPOUND:
-                writeCompound((BFSCompound) value.value);
+            case OBJECT:
+                writeObject((JSONObject) value.value);
                 break;
 
             case BYTE_ARRAY:
@@ -110,27 +107,15 @@ public class BFSOutputStream extends DataOutputStream {
         }
     }
 
-    /**
-     * Same as {@link #writeCompound(NBTCompound, boolean)}, but with {@code close} set to {@literal
-     * true}.
-     *
-     * @see #writeCompound(NBTCompound, boolean)
-     */
-    public void writeCompound(BFSCompound compound) throws IOException {
-        writeCompound(compound, true);
+    public void writeObject(JSONObject object) throws IOException {
+        writeObject(object, true);
     }
 
-    /**
-     * Write a compound tag to the stream
-     *
-     * @param close Whether or not the compound should be closed via a {@link TagType#END}
-     * @throws IOException If the compound could not be written
-     */
-    public void writeCompound(BFSCompound compound, boolean close) throws IOException {
-        for (Entry<String, BFSObject> tag : compound.entrySet()) {
-            writeTagType(tag.getValue().tag); // Tag type
-            writeString(tag.getKey()); // Tag name
-            writeValue(tag.getValue()); // Tag value
+    public void writeObject(JSONObject object, boolean close) throws IOException {
+        for (String key : object.keySet()) {
+            writeTagType(TagType.fromObject(object.get(key))); // Tag type
+            writeString(key); // Tag name
+            writeValue((BFSObject) object.get(key)); // Tag value
         }
 
         if (close) {
@@ -143,14 +128,14 @@ public class BFSOutputStream extends DataOutputStream {
      *
      * @throws IOException If the list could not be written
      */
-    public void writeList(BFSList list) throws IOException {
+    public void writeArray(BFSArray list) throws IOException {
         if (list == null) {
             writeTagType(TagType.END);
             writeInt(0); // Length of zero
             return;
         }
 
-        writeTagType(list.getContentType()); // Type of list contents
+		writeTagType(list.getContentType()); // Type of list contents
         writeInt(list.size()); // Size of lise
         for (BFSObject item : list.list()) { // List items
             writeValue(item);

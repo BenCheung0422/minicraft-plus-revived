@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.InflaterInputStream;
 
+import org.json.JSONObject;
+
 public class BFSInputStream extends DataInputStream {
 	public BFSInputStream(InputStream out) {
 		super(out);
@@ -15,30 +17,19 @@ public class BFSInputStream extends DataInputStream {
 		return new BFSInputStream(new InflaterInputStream(out));
 	}
 
-	/**
-     * Read an NBT compound from the inputStream
-     *
-     * @return A root TAG_Compound containing the InputStream's NBT data
-     * @throws IOException If the inputStream could not be properly read as NBT data
-     */
-    public BFSCompound readFully() throws IOException {
+    public JSONObject readFully() throws IOException {
         TagType rootType = readTagId();
         if (rootType == TagType.END) {
-            return new BFSCompound();
-        } else if (rootType != TagType.COMPOUND) {
+            return new JSONObject();
+        } else if (rootType != TagType.OBJECT) {
             throw new IOException("Expected COMPOUND at NBT root, but got " + rootType);
         }
         readString(); // Skip root name; typically empty anyways.
-        return readCompound();
+        return readObject();
     }
 
-    /**
-     * Read a TAG_Compound from the inputStream
-     *
-     * @throws IOException If the compound could not be read or did not contain valid NBT data
-     */
-    public BFSCompound readCompound() throws IOException {
-        BFSCompound result = new BFSCompound();
+    public JSONObject readObject() throws IOException {
+        JSONObject result = new JSONObject();
 
         boolean reachedEnd = false;
         while (!reachedEnd) {
@@ -60,49 +51,29 @@ public class BFSInputStream extends DataInputStream {
         return result;
     }
 
-    /**
-     * Read a TAG_List from the inputStream
-     *
-     * @throws IOException If the list could not be read or did not contain valid NBT data
-     */
-    public BFSList readList() throws IOException {
+    public BFSArray readArray() throws IOException {
         TagType typeOfContents = readTagId();
         if (typeOfContents == null) {
-            throw new IOException("Unknown tag ID for TAG_List");
+            throw new IOException("Unknown tag ID for Array Content");
         }
 
         int length = readInt();
         if (length <= 0) {
-            return new BFSList(typeOfContents);
+            return new BFSArray(typeOfContents);
         }
 
-        BFSList result = new BFSList(typeOfContents);
+        BFSArray result = new BFSArray(typeOfContents);
         for (int i = 0; i < length; i++) {
             result.add(readValue(typeOfContents));
         }
         return result;
     }
 
-    /**
-     * Same as {@link #readString(boolean)}, but the resulting string will never be interned.
-     *
-     * @see #readString(boolean)
-     * @see String#intern()
-     */
     @SuppressWarnings("UnusedReturnValue")
     public String readString() throws IOException {
         return readString(false);
     }
 
-    /**
-     * Read a length-prefixed string from the inputStream
-     *
-     * @param intern Whether or not the string's {@link String#intern() interned} value will be
-     *               returned. When deserializing lots of NBT data with the same properties, setting
-     *               this to {@code true} can significantly lower memory consumption.
-     * @throws IOException If the string could not be read or was not valid NBT data
-     * @see String#intern()
-     */
     public String readString(boolean intern) throws IOException {
         String utf = readUTF();
         if (intern) {
@@ -111,11 +82,6 @@ public class BFSInputStream extends DataInputStream {
         return utf;
     }
 
-    /**
-     * Read a TAG_Long_Array from the inputStream
-     *
-     * @throws IOException If the long array could not be read or was not valid NBT data
-     */
     public long[] readLongArray() throws IOException {
         int length = readInt();
         if (length < 0) {
@@ -142,11 +108,6 @@ public class BFSInputStream extends DataInputStream {
         return longArray;
     }
 
-    /**
-     * Read a TAG_Int_Array from the inputStream
-     *
-     * @throws IOException If the integer array could not be read or was not valid NBT data
-     */
     public int[] readIntArray() throws IOException {
         int length = readInt();
         if (length < 0) {
@@ -172,11 +133,6 @@ public class BFSInputStream extends DataInputStream {
         return intArray;
     }
 
-    /**
-     * Read a TAG_Byte_Array from the inputStream
-     *
-     * @throws IOException If the byte array could not be read or was not valid NBT data
-     */
     public byte[] readByteArray() throws IOException {
         int length = readInt();
         if (length < 0) {
@@ -191,57 +147,47 @@ public class BFSInputStream extends DataInputStream {
         return bytes;
     }
 
-    /**
-     * Read an NBT tag ID from the inputStream
-     *
-     * @throws IOException If the tag ID could not be read
-     */
     public TagType readTagId() throws IOException {
         return TagType.fromId(read());
     }
 
-    /**
-     * Read a NBT value from the inputStream as the specified type
-     *
-     * @throws IOException If the value could not be read or was not valid NBT data
-     */
     public BFSObject readValue(TagType tagType) throws IOException {
         switch (tagType) {
             case BYTE:
-                return new BFSObject(TagType.BYTE, readByte());
+                return BFS.getBFSObject(readByte());
 
             case SHORT:
-                return new BFSObject(TagType.SHORT, readShort());
+                return BFS.getBFSObject(readShort());
 
             case INT:
-                return new BFSObject(TagType.INT, readInt());
+                return BFS.getBFSObject(readInt());
 
             case LONG:
-                return new BFSObject(TagType.LONG, readLong());
+                return BFS.getBFSObject(readLong());
 
             case FLOAT:
-                return new BFSObject(TagType.FLOAT, readFloat());
+                return BFS.getBFSObject(readFloat());
 
             case DOUBLE:
-                return new BFSObject(TagType.DOUBLE, readDouble());
+                return BFS.getBFSObject(readDouble());
 
             case BYTE_ARRAY:
-                return new BFSObject(TagType.BYTE_ARRAY, readByteArray());
+                return BFS.getBFSObject(readByteArray());
 
             case STRING:
-                return new BFSObject(TagType.STRING, readString());
+                return BFS.getBFSObject(readString());
 
-            case LIST:
-                return new BFSObject(TagType.LIST, readList());
+            case ARRAY:
+                return BFS.getBFSObject(readArray());
 
-            case COMPOUND:
-                return new BFSObject(TagType.COMPOUND, readCompound());
+            case OBJECT:
+                return BFS.getBFSObject(readObject());
 
             case INT_ARRAY:
-                return new BFSObject(TagType.INT_ARRAY, readIntArray());
+                return BFS.getBFSObject(readIntArray());
 
             case LONG_ARRAY:
-                return new BFSObject(TagType.LONG_ARRAY, readLongArray());
+                return BFS.getBFSObject(readLongArray());
 
             default:
                 return null;
