@@ -5,7 +5,10 @@ import minicraft.util.Logging;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.util.Objects;
 
 /**
@@ -20,6 +23,7 @@ public class MinicraftImage {
 
 	public final int width, height; // Width and height of the sprite sheet
 	public final int[] pixels; // Integer array of the image's pixels
+	public final BufferedImage image;
 
 	/**
 	 * Initializes a {@code MinicraftImage} instance from the provided size.
@@ -36,6 +40,7 @@ public class MinicraftImage {
 		this.width = width;
 		this.height = height;
 		pixels = new int[width * height];
+		image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 	}
 
 	/**
@@ -64,6 +69,10 @@ public class MinicraftImage {
 
 		this.width = width;
 		this.height = height;
+		this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = this.image.createGraphics();
+		g.drawImage(image, 0, 0, width, height, null);
+		g.dispose();
 		pixels = image.getRGB(0, 0, width, height, null, 0, width); // Gets the color array of the image pixels
 
 		// Applying the RGB array into Minicraft rendering system 25 bits RBG array.

@@ -44,6 +44,7 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.awt.image.VolatileImage;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -131,10 +132,10 @@ public class Renderer extends Game {
 		Graphics2D g = (Graphics2D) bs.getDrawGraphics(); // Gets the graphics in which java draws the picture
 		g.clearRect(0, 0, canvas.getWidth(), canvas.getHeight()); // Draws a rect to fill the whole window (to cover last?)
 
-
+		VolatileImage image = canvas.createVolatileImage(WIDTH, HEIGHT);
 
 		// Flushes the screen to the renderer.
-		screen.flush();
+		screen.flush(image);
 
 		// Scale the pixels.
 		int ww = getWindowSize().width;
@@ -165,24 +166,24 @@ public class Renderer extends Game {
 				count++;
 			}
 
-			try { // https://stackoverflow.com/a/4216635
-				int w = image.getWidth();
-				int h = image.getHeight();
-				BufferedImage before = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-				before.getRaster().setRect(image.getData());
-				int scale = (Integer) Settings.get("screenshot");
-				// BufferedImage after = BigBufferedImage.create(scale * w, scale * h, BufferedImage.TYPE_INT_RGB);
-				AffineTransform at = new AffineTransform();
-				at.scale(scale, scale); // Setting the scaling.
-				AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BICUBIC);
-
-				// Use this solution without larger scales which use up a lot memory.
-				// With scale 20, up to around 360MB overall RAM use.
-				BufferedImage after = scaleOp.filter(before, null);
-				ImageIO.write(after, "png", file);
-			} catch (IOException e) {
-				CrashHandler.errorHandle(e);
-			}
+//			try { // https://stackoverflow.com/a/4216635 TODO
+//				int w = image.getWidth();
+//				int h = image.getHeight();
+//				BufferedImage before = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+//				before.getRaster().setRect(image.getData());
+//				int scale = (Integer) Settings.get("screenshot");
+//				// BufferedImage after = BigBufferedImage.create(scale * w, scale * h, BufferedImage.TYPE_INT_RGB);
+//				AffineTransform at = new AffineTransform();
+//				at.scale(scale, scale); // Setting the scaling.
+//				AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BICUBIC);
+//
+//				// Use this solution without larger scales which use up a lot memory.
+//				// With scale 20, up to around 360MB overall RAM use.
+//				BufferedImage after = scaleOp.filter(before, null);
+//				ImageIO.write(after, "png", file);
+//			} catch (IOException e) {
+//				CrashHandler.errorHandle(e);
+//			}
 
 			Updater.screenshot--;
 		}

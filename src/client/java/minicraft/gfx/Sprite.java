@@ -1,5 +1,8 @@
 package minicraft.gfx;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+
 /**
  * This class represents a group of pixels on their sprite sheet(s).
  */
@@ -35,15 +38,18 @@ public class Sprite {
 	 * This class represents a pixel on the sprite sheet.
 	 */
 	public static class Px {
-		protected int x, y, mirror;
-		protected MinicraftImage sheet;
+		protected final int x, y, mirror;
+		protected final BufferedImage cell;
 
 		public Px(int sheetX, int sheetY, int mirroring, MinicraftImage sheet) {
 			// pixelX and pixelY are the relative positions each pixel should have relative to the top-left-most pixel of the sprite.
 			x = sheetX;
 			y = sheetY;
 			mirror = mirroring;
-			this.sheet = sheet;
+			cell = new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB);
+			Graphics2D g = cell.createGraphics();
+			g.drawImage(sheet.image,
+				0, 0, 8, 8, x * 8, y * 8, x * 8 + 8, y * 8 + 8, null);
 		}
 
 		public String toString() {

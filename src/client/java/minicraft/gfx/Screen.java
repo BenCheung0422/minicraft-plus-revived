@@ -8,10 +8,16 @@ import org.intellij.lang.annotations.MagicConstant;
 
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RadialGradientPaint;
+import java.awt.Toolkit;
+import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferInt;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.RGBImageFilter;
+import java.awt.image.VolatileImage;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayDeque;
@@ -107,39 +113,143 @@ public class Screen {
 
 		@Override
 		public void render(Graphics2D graphics) {
-			int toffs = xt + yt * sheet.width;
-			// Determines if the image should be mirrored...
-			boolean mirrorX = (mirrors & BIT_MIRROR_X) > 0; // Horizontally.
-			boolean mirrorY = (mirrors & BIT_MIRROR_Y) > 0; // Vertically.
-			for (int y = 0; y < th; ++y) { // Relative
-				if (y + yp < 0) continue; // If the pixel is out of bounds, then skip the rest of the loop.
-				if (y + yp >= h) break;
-				int sy = mirrorY ? th - 1 - y : y; // Source relative; reverse if necessary
-				for (int x = 0; x < tw; ++x) { // Relative
-					if (x + xp < 0) continue; // Skip rest if out of bounds.
-					if (x + xp >= w) break;
-					int sx = mirrorX ? tw - 1 - x : x; // Source relative; reverse if necessary
-					int col = sheet.pixels[toffs + sx + sy * sheet.width]; // Gets the color of the current pixel from the value stored in the sheet.
-					if (col >> 24 != 0) { // if not transparent
-						int index = (xp + x) + (yp + y) * w;
-						if (whiteTint != -1 && col == 0x1FFFFFF) {
-							// If this is white, write the whiteTint over it
-							pixels[index] = Color.upgrade(whiteTint);
-						} else {
-							// Inserts the colors into the image
-							if (fullBright) {
-								pixels[index] = Color.WHITE;
-							} else {
-								if (color != 0) {
-									pixels[index] = color;
-								} else {
-									pixels[index] = Color.upgrade(col);
-								}
-							}
+//			int toffs = xt + yt * sheet.width;
+//			// Determines if the image should be mirrored...
+//			boolean mirrorX = (mirrors & BIT_MIRROR_X) > 0; // Horizontally.
+//			boolean mirrorY = (mirrors & BIT_MIRROR_Y) > 0; // Vertically.
+//			for (int y = 0; y < th; ++y) { // Relative
+//				if (y + yp < 0) continue; // If the pixel is out of bounds, then skip the rest of the loop.
+//				if (y + yp >= h) break;
+//				int sy = mirrorY ? th - 1 - y : y; // Source relative; reverse if necessary
+//				for (int x = 0; x < tw; ++x) { // Relative
+//					if (x + xp < 0) continue; // Skip rest if out of bounds.
+//					if (x + xp >= w) break;
+//					int sx = mirrorX ? tw - 1 - x : x; // Source relative; reverse if necessary
+//					int col = sheet.pixels[toffs + sx + sy * sheet.width]; // Gets the color of the current pixel from the value stored in the sheet.
+//					if (col >> 24 != 0) { // if not transparent
+//						int index = (xp + x) + (yp + y) * w;
+//						if (whiteTint != -1 && col == 0x1FFFFFF) {
+//							// If this is white, write the whiteTint over it
+//							pixels[index] = Color.upgrade(whiteTint);
+//						} else {
+//							// Inserts the colors into the image
+//							if (fullBright) {
+//								pixels[index] = Color.WHITE;
+//							} else {
+//								if (color != 0) {
+//									pixels[index] = color;
+//								} else {
+//									pixels[index] = Color.upgrade(col);
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+			Image img = null;
+			if (fullBright || color != 0) {
+				BufferedImage imgBlur = new BufferedImage(tw, th, BufferedImage.TYPE_INT_RGB);
+				Graphics2D g2 = imgBlur.createGraphics();
+				g2.drawImage(sheet.image, 0, 0, tw, th, xt, yt, xt + tw, yt + th, null);
+				g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_IN, 1));
+				g2.setColor(fullBright ? new java.awt.Color(255, 255, 255) :
+					new java.awt.Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF));
+				g2.fillRect(0, 0, tw, th);
+				g2.dispose();
+				img = imgBlur;
+			} else if (whiteTint != -1) {
+				BufferedImage imgBlur = new BufferedImage(tw, th, BufferedImage.TYPE_INT_RGB);
+				Graphics2D g = imgBlur.createGraphics();
+				g.drawImage(sheet.image, 0, 0, tw, th, xt, yt, xt + tw, yt + th, null);
+				g.dispose();
+				img = Toolkit.getDefaultToolkit().createImage(new FilteredImageSource(imgBlur.getSource(),
+					new RGBImageFilter() {
+						@Override
+						public int filterRGB(int x, int y, int rgb) {
+							return rgb == 0xFFFFFF ? whiteTint & 0xFFFFFF : rgb;
 						}
-					}
-				}
+					}));
 			}
+
+			if (mirrors != 0) {
+				boolean mirrorX = (mirrors & BIT_MIRROR_X) > 0; // Horizontally.
+				boolean mirrorY = (mirrors & BIT_MIRROR_Y) > 0; // Vertically.
+				BufferedImage bi = new BufferedImage(tw, th,
+					BufferedImage.TYPE_INT_RGB);
+				Graphics2D g2d = bi.createGraphics();
+				g2d.translate(mirrorX ? bi.getWidth() : 0, mirrorY ? bi.getHeight() : 0);
+				g2d.scale(mirrorX ? -1 : 1, mirrorY ? -1 : 1);
+				if (img != null)
+					g2d.drawImage(img, 0, 0, null);
+				else
+					g2d.drawImage(sheet.image, 0, 0, tw, th, xt, yt, xt + tw, yt + th, null);
+				g2d.dispose();
+				img = bi;
+			}
+
+			if (img != null)
+				graphics.drawImage(img, xp, yp, null);
+			else
+				graphics.drawImage(sheet.image,
+					xp, yp, xp + tw, yp + th, xt, yt, xt + tw, yt + th, null);
+		}
+	}
+
+	private static class ImageRendering implements Rendering {
+		private final int xp, yp, bits, whiteTint, color;
+		private final BufferedImage image;
+		private final boolean fullbright;
+
+		public ImageRendering(int xp, int yp, int bits, BufferedImage image, int whiteTint,
+		                      boolean fullbright, int color) {
+			this.xp = xp;
+			this.yp = yp;
+			this.bits = bits;
+			this.image = image;
+			this.whiteTint = whiteTint;
+			this.fullbright = fullbright;
+			this.color = color;
+		}
+
+		@Override
+		public void render(Graphics2D graphics) {
+			Image img;
+			if (fullbright || color != 0) {
+				BufferedImage imgBlur = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+				Graphics2D g2 = imgBlur.createGraphics();
+				g2.drawImage(image, 0, 0, null);
+				g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_IN, 1));
+				g2.setColor(fullbright ? new java.awt.Color(255, 255, 255) :
+					new java.awt.Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF));
+				g2.fillRect(0, 0, image.getWidth(), image.getHeight());
+				g2.dispose();
+				img = imgBlur;
+			} else if (whiteTint != -1) {
+				img = Toolkit.getDefaultToolkit().createImage(new FilteredImageSource(image.getSource(),
+					new RGBImageFilter() {
+					@Override
+					public int filterRGB(int x, int y, int rgb) {
+						return rgb == 0xFFFFFF ? whiteTint & 0xFFFFFF : rgb;
+					}
+				}));
+			} else {
+				img = image;
+			}
+
+			if (bits != 0) {
+				boolean mirrorX = (bits & BIT_MIRROR_X) > 0; // Horizontally.
+				boolean mirrorY = (bits & BIT_MIRROR_Y) > 0; // Vertically.
+				BufferedImage bi = new BufferedImage(img.getWidth(null), img.getHeight(null),
+					BufferedImage.TYPE_INT_RGB);
+				Graphics2D g2d = bi.createGraphics();
+				g2d.translate(mirrorX ? bi.getWidth() : 0, mirrorY ? bi.getHeight() : 0);
+				g2d.scale(mirrorX ? -1 : 1, mirrorY ? -1 : 1);
+				g2d.drawImage(image, 0, 0, null);
+				g2d.dispose();
+				img = bi;
+			}
+
+			graphics.drawImage(img, xp, yp, null);
 		}
 	}
 
@@ -237,7 +347,7 @@ public class Screen {
 		queue(clearRendering);
 	}
 
-	public void flush() {
+	public void flush(VolatileImage image) {
 		Graphics2D g2d = image.createGraphics();
 		Rendering rendering;
 		do { // Skips until the latest clear rendering is obtained.
@@ -262,6 +372,10 @@ public class Screen {
 	 **/
 	public void render(int xp, int yp, int xt, int yt, int bits, MinicraftImage sheet, int whiteTint, boolean fullbright) {
 		render(xp, yp, xt, yt, bits, sheet, whiteTint, fullbright, 0);
+	}
+
+	public void render(int xp, int yp, int xt, int yt, int bits, MinicraftImage sheet, int whiteTint, boolean fullbright, int color) {
+		render(xp, yp, xt * 8, yt * 8, 8, 8, sheet, bits, whiteTint, fullbright, color);
 	}
 
 	public void render(int xp, int yp, LinkedSprite sprite) {
@@ -308,19 +422,19 @@ public class Screen {
 		render(xp, yp, pixel, mirror, whiteTint, fullbright, 0);
 	}
 
-	public void render(int xp, int yp, Sprite.Px pixel, int mirror, int whiteTint, boolean fullbright, int color) {
-		render(xp, yp, pixel.x, pixel.y, pixel.mirror ^ mirror, pixel.sheet, whiteTint, fullbright, color);
-	}
-
 	/**
 	 * Renders an object from the sprite sheet based on screen coordinates, tile (SpriteSheet location), colors, and bits (for mirroring). I believe that xp and yp refer to the desired position of the upper-left-most pixel.
 	 */
-	public void render(int xp, int yp, int xt, int yt, int bits, MinicraftImage sheet, int whiteTint, boolean fullbright, int color) {
-		if (sheet == null) return; // Verifying that sheet is not null.
+	public void render(int xp, int yp, Sprite.Px pixel, int mirror, int whiteTint, boolean fullbright, int color) {
+		if (pixel.cell == null) return; // Verifying that sheet is not null.
 
 		// xp and yp are originally in level coordinates, but offset turns them to screen coordinates.
 		// xOffset and yOffset account for screen offset
-		render(xp - xOffset, yp - yOffset, xt * 8, yt * 8, 8, 8, sheet, bits, whiteTint, fullbright, color);
+		render(xp - xOffset, yp - yOffset, pixel.mirror ^ mirror, pixel.cell, whiteTint, fullbright, color);
+	}
+
+	public void render(int xp, int yp, int bits, BufferedImage image, int whiteTint, boolean fullbright, int color) {
+		queue(new ImageRendering(xp, yp, bits, image, whiteTint, fullbright, color));
 	}
 
 	public void render(int xp, int yp, int xt, int yt, int tw, int th, MinicraftImage sheet) {
