@@ -35,7 +35,7 @@ public class PlayerInvDisplay extends Display {
 		descriptionMenuBuilder = new Menu.Builder(true, 3, RelPos.TOP_LEFT);
 		creativeMode = Game.isMode("minicraft.settings.mode.creative");
 		itemDescription = getDescription();
-		Menu descriptionMenu = descriptionMenuBuilder.setPositioning(new Point(padding, menus[0].getBounds().getBottom() + 8), RelPos.BOTTOM_RIGHT)
+		Menu descriptionMenu = descriptionMenuBuilder.setPositioning(new Point(padding, invMenu.getBounds().getBottom() + 8), RelPos.BOTTOM_RIGHT)
 			.setEntries(StringEntry.useLines(Color.WHITE, false, itemDescription.split("\n")))
 			.setSelectable(false)
 			.createMenu();
@@ -158,7 +158,7 @@ public class PlayerInvDisplay extends Display {
 					Item fromItem = from.get(fromSel);
 
 					boolean transferAll;
-					if (input.getKey("SHIFT-ENTER").clicked) {
+					if (input.getMappedKey("SHIFT-ENTER").isClicked()) {
 						transferAll = true;
 					} else if (input.inputPressed("attack")) { // If stack limit is available, this can transfer whole stack
 						transferAll = !(fromItem instanceof StackableItem);
@@ -168,7 +168,7 @@ public class PlayerInvDisplay extends Display {
 					if (toItem instanceof StackableItem && transferAll)
 						((StackableItem) toItem).count = ((StackableItem) toItem).maxCount;
 
-					if (input.getKey("CTRL").down) {
+					if (input.getMappedKey("CTRL").isDown()) {
 						if (to.add(toItem) != null) { // Ignoring the cursor
 							Logging.PLAYER.trace("Item {} cannot be added to the player inventory because max slot reached.", toItem);
 						}

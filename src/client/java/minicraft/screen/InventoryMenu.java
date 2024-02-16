@@ -43,7 +43,7 @@ class InventoryMenu extends ItemListMenu {
 	public void tick(InputHandler input) {
 		if (sortable) {
 			// Item slot movement; preventing up and down being proceeded before this
-			if (input.getKey("SHIFT").down && input.getKey("CURSOR-UP").clicked) {
+			if (input.getMappedKey("SHIFT").isDown() && input.getMappedKey("CURSOR-UP").isClicked()) {
 				int sel = getSelection();
 				if (sel > 0) { // If there is an entry above.
 					inv.swapSlots(sel, --sel);
@@ -52,7 +52,7 @@ class InventoryMenu extends ItemListMenu {
 					refreshEntries();
 				}
 				return;
-			} else if (input.getKey("SHIFT").down && input.getKey("CURSOR-DOWN").clicked) {
+			} else if (input.getMappedKey("SHIFT").isDown() && input.getMappedKey("CURSOR-DOWN").isClicked()) {
 				int sel = getSelection();
 				if (getNumOptions() > sel + 1) { // If there is an entry below.
 					inv.swapSlots(sel, ++sel);
@@ -62,7 +62,7 @@ class InventoryMenu extends ItemListMenu {
 				}
 				return;
 
-			} else if (input.getKey("CTRL").down && input.getKey("CURSOR-UP").clicked) { // StackableItem slot stacking
+			} else if (input.getMappedKey("CTRL").isDown() && input.getMappedKey("CURSOR-UP").isClicked()) { // StackableItem slot stacking
 				int sel = getSelection();
 				if (sel > 0) { // If there is an entry above.
 					Item item = inv.get(sel);
@@ -86,7 +86,7 @@ class InventoryMenu extends ItemListMenu {
 					}
 				}
 				return;
-			} else if (input.getKey("CTRL").down && input.getKey("CURSOR-DOWN").clicked) { // StackableItem slot stacking
+			} else if (input.getMappedKey("CTRL").isDown() && input.getMappedKey("CURSOR-DOWN").isClicked()) { // StackableItem slot stacking
 				int sel = getSelection();
 				if (getNumOptions() > sel + 1) { // If there is an entry below.
 					Item item = inv.get(sel);
