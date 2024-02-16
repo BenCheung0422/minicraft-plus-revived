@@ -27,12 +27,13 @@ public class ContainerDisplay extends Display {
 		this.chest = chest;
 
 		onScreenKeyboardMenu = OnScreenKeyboardMenu.checkAndCreateMenu();
-		if (onScreenKeyboardMenu != null)
+		if (onScreenKeyboardMenu != null) {
 			onScreenKeyboardMenu.setVisible(false);
+		}
 
 		menus[1].translate(menus[0].getBounds().getWidth() + padding, 0);
 
-		if(menus[0].getNumOptions() == 0) onSelectionChange(0, 1);
+		if (menus[1].getNumOptions() == 0) onSelectionChange(1, 0);
 	}
 
 	OnScreenKeyboardMenu onScreenKeyboardMenu;
@@ -40,21 +41,30 @@ public class ContainerDisplay extends Display {
 	@Override
 	protected void onSelectionChange(int oldSel, int newSel) {
 		super.onSelectionChange(oldSel, newSel);
-		if(oldSel == newSel) return; // this also serves as a protection against access to menus[0] when such may not exist.
+
+		if (oldSel == newSel)
+			return; // this also serves as a protection against access to menus[0] when such may not exist.
+
 		int shift = 0;
-		if(newSel == 0) shift = padding - menus[0].getBounds().getLeft();
-		if(newSel == 1) shift = (Screen.w - padding) - menus[1].getBounds().getRight();
-		for(Menu m: menus)
+
+		if (newSel == 0) shift = padding - menus[0].getBounds().getLeft();
+		if (newSel == 1) shift = (Screen.w - padding) - menus[1].getBounds().getRight();
+
+		for (Menu m : menus) {
 			m.translate(shift, 0);
+		}
 	}
 
-	private int getOtherIdx() { return selection ^ 1; }
+	private int getOtherIdx() {
+		return selection ^ 1;
+	}
 
 	@Override
 	public void render(Screen screen) {
 		super.render(screen);
-		if (onScreenKeyboardMenu != null)
+		if (onScreenKeyboardMenu != null) {
 			onScreenKeyboardMenu.render(screen);
+		}
 	}
 
 	@Override
@@ -85,7 +95,7 @@ public class ContainerDisplay extends Display {
 			if (!acted)
 				curMenu.tick(input);
 
-			if (input.getKey("menu").clicked || chest.isRemoved()) {
+			if (input.getMappedKey("menu").isClicked() || chest.isRemoved()) {
 				Game.setDisplay(null);
 				return;
 			}
@@ -100,16 +110,17 @@ public class ContainerDisplay extends Display {
 		}
 
 		if (mainMethod || !onScreenKeyboardMenu.isVisible())
-			if (input.inputPressed("attack") || input.getKey("shift-enter").clicked) {
+			if (input.inputPressed("attack")) {
 				if (curMenu.getEntries().length == 0) return;
+
 				// switch inventories
 				Inventory from, to;
-				if(selection == 0) {
-					from = chest.getInventory();
-					to = player.getInventory();
-				} else {
+				if (selection == 0) {
 					from = player.getInventory();
 					to = chest.getInventory();
+				} else {
+					from = chest.getInventory();
+					to = player.getInventory();
 				}
 
 				int toSel = menus[otherIdx].getSelection();
@@ -117,22 +128,22 @@ public class ContainerDisplay extends Display {
 
 				Item fromItem = from.get(fromSel);
 
-				boolean transferAll = input.getKey("shift-enter").clicked || !(fromItem instanceof StackableItem) || ((StackableItem)fromItem).count == 1;
+				boolean transferAll = input.getMappedKey("shift").isDown() || !(fromItem instanceof StackableItem) || ((StackableItem) fromItem).count == 1;
 
 				Item toItem = fromItem.copy();
 
 				if (fromItem instanceof StackableItem) {
 					int move = 1;
 					if (!transferAll) {
-						((StackableItem)toItem).count = 1;
+						((StackableItem) toItem).count = 1;
 					} else {
-						move = ((StackableItem)toItem).count;
+						move = ((StackableItem) toItem).count;
 					}
 
 					if ((input.getKey("CTRL").down ? to.add(toItem) : to.add(toSel, toItem, false)) != null) {
 						((StackableItem)fromItem).count -= move - ((StackableItem) toItem).count;
 					} else if (!transferAll) {
-						((StackableItem)fromItem).count--;
+						((StackableItem) fromItem).count--;
 					} else {
 						from.remove(fromSel);
 					}
@@ -150,8 +161,9 @@ public class ContainerDisplay extends Display {
 	 * Also, the game is paused when the display is shown, so it is not possible for the player to pickup items during this period. */
 	@Deprecated
 	public void onInvUpdate(ItemHolder holder) {
-		if(holder == player || holder == chest)
+		if (holder == player || holder == chest) {
 			update();
+		}
 	}
 
 	private void update() {
